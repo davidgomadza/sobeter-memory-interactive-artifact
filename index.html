@@ -1,0 +1,303 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sobeter Memory — Interactive Artifact</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#48b;--muted:#94a3b8;--glass:rgba(255,255,255,0.03)}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;margin:0;background:linear-gradient(180deg,#071029 0%, #081027 60%);color:#e6eef8}
+    header{padding:18px 24px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:18px;align-items:center}
+    h1{margin:0;font-size:18px}
+    .container{padding:20px;display:grid;grid-template-columns:360px 1fr;gap:18px}
+    .card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+    label{display:block;margin-bottom:6px;color:var(--muted);font-size:13px}
+    input[type=text],select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:var(--glass);color:inherit}
+    button{background:linear-gradient(90deg,var(--accent),#6a9);border:none;padding:8px 12px;border-radius:8px;color:#061225;cursor:pointer}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .visual{height:260px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:10px}
+    .bar{height:18px;background:rgba(255,255,255,0.03);border-radius:8px;overflow:hidden}
+    .bar > i{display:block;height:100%;background:linear-gradient(90deg,#2dd4bf,#60a5fa)}
+    .log{height:140px;overflow:auto;background:rgba(0,0,0,0.2);padding:8px;border-radius:8px;font-size:13px}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+    .codec-area{display:flex;gap:8px}
+    pre{white-space:pre-wrap;font-size:12px}
+    footer{padding:12px 24px;color:var(--muted);font-size:13px}
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Sobeter Memory — Interactive Artifact (simulation)</h1>
+      <div style="font-size:12px;color:var(--muted)">A simulated system inspired by an uploaded design to explore memory expansion, overlays, and a codec.</div>
+    </div>
+  </header>  <main class="container">
+    <aside class="card">
+      <label>Electromagnetic Sheet (Sobeter) — state</label>
+      <div style="margin-bottom:10px" id="sheetState">Uninitialized</div><label>Import / Load sample database</label>
+  <select id="sampleBooks">
+    <option value="">-- choose sample book/code --</option>
+    <option value="76854">Book 1 — Thoughts To Word or Audio (code 76854)</option>
+    <option value="287289140">Book 40 — 40 Steps to ... (code 287289140)</option>
+    <option value="7768528312">Tomorrow's World Order (code 7768528312)</option>
+  </select>
+  <div style="margin-top:8px" class="controls">
+    <button id="initSheet">Create Sobeter Sheet (simulate)</button>
+    <button id="formatSheet">Format / Condense</button>
+  </div>
+
+  <hr style="margin:12px 0;border-color:rgba(255,255,255,0.03)"/>
+
+  <label>Brain Commands (simulated)</label>
+  <div class="controls">
+    <button onclick="brainCommand('load')">Load</button>
+    <button onclick="brainCommand('embed')">Embed</button>
+    <button onclick="brainCommand('read')">Read</button>
+    <button onclick="brainCommand('retrieve')">Retrieve</button>
+    <button onclick="brainCommand('unload')">Unload</button>
+  </div>
+
+  <hr style="margin:12px 0;border-color:rgba(255,255,255,0.03)"/>
+
+  <label>Codec — encoder / decoder</label>
+  <div class="codec-area">
+    <input type="text" id="codecInput" placeholder="Text to encode" />
+    <button id="encodeBtn">Encode</button>
+  </div>
+  <div style="margin-top:8px" class="codec-area">
+    <input type="text" id="codecOutput" placeholder="Decoded text" />
+    <button id="decodeBtn">Decode</button>
+  </div>
+
+  <hr style="margin:12px 0;border-color:rgba(255,255,255,0.03)"/>
+  <label>Persistence</label>
+  <div class="controls">
+    <button id="saveLocal">Save to Local</button>
+    <button id="loadLocal">Load from Local</button>
+    <button id="exportJson">Export JSON</button>
+  </div>
+
+</aside>
+
+<section class="card">
+  <div class="visual">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <strong>Memory Capacity</strong>
+      <div id="capacityLabel">0 / 1024 units</div>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="capacityBar" style="width:0%"></i></div>
+
+    <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
+      <div>Active overlays: <b id="overlaysCount">0</b></div>
+      <div>Durability score: <b id="durability">100%</b></div>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <div style="flex:1">
+        <label>Overlays (up to 9)</label>
+        <div id="overlayList" style="display:flex;flex-direction:column;gap:6px"></div>
+        <div style="margin-top:8px;display:flex;gap:6px">
+          <input id="overlayName" placeholder="name/code"/>
+          <button id="addOverlay">Add</button>
+        </div>
+      </div>
+
+      <div style="width:320px">
+        <label>Real-time log</label>
+        <div class="log" id="log"></div>
+      </div>
+    </div>
+
+    <hr style="border-color:rgba(255,255,255,0.03);margin-top:8px"/>
+    <div style="display:flex;gap:8px;align-items:center">
+      <label style="margin:0">Waveform preview (simulated neural impulses)</label>
+      <canvas id="waveCanv" width="800" height="120" style="border-radius:8px;background:rgba(0,0,0,0.12)"></canvas>
+    </div>
+  </div>
+
+  <div style="margin-top:12px;display:flex;gap:8px;align-items:flex-start">
+    <div style="flex:1">
+      <label>Codec debug / notes</label>
+      <pre id="codecDebug">Codec: custom "SobCoder" — compression + reversible mask. Uses iterative b64 + XOR + run-length micro-compress.</pre>
+    </div>
+    <div style="width:260px">
+      <label>Quick actions</label>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button id="autoExpand">Auto Expand Capacity</button>
+        <button id="stressTest">Run Durability Stress Test</button>
+        <button id="clearLog">Clear Log</button>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+  </main>  <footer>
+    This is a simulation and educational interactive artifact. It does not change human brains or offer medical/neurological improvements. Use it to prototype data formats, command flows, and UI/UX for a memory-augmentation concept.
+  </footer>  <script>
+    // Simple simulated system state
+    const state = {
+      sheet: null,
+      capacityMax: 1024,
+      capacityUsed: 0,
+      overlays: [],
+      durability: 100
+    };
+
+    const logEl = document.getElementById('log');
+    function log(...t){
+      const line = document.createElement('div');
+      line.textContent = `[${new Date().toLocaleTimeString()}] ` + t.join(' ');
+      logEl.prepend(line);
+    }
+
+    function updateUI(){
+      document.getElementById('capacityLabel').textContent = `${state.capacityUsed} / ${state.capacityMax} units`;
+      const pct = Math.min(100, (state.capacityUsed/state.capacityMax)*100).toFixed(1);
+      document.getElementById('capacityBar').style.width = pct + '%';
+      document.getElementById('overlaysCount').textContent = state.overlays.length;
+      document.getElementById('durability').textContent = state.durability.toFixed(0) + '%';
+
+      const list = document.getElementById('overlayList'); list.innerHTML = '';
+      state.overlays.forEach((o, i)=>{
+        const row = document.createElement('div');
+        row.style.display='flex';row.style.justifyContent='space-between';row.style.alignItems='center';
+        row.innerHTML = `<div>${i+1}. ${o.name} (${o.size}u)</div>`;
+        const rm = document.createElement('button'); rm.textContent='Remove'; rm.style.fontSize='12px';
+        rm.onclick = ()=>{ state.capacityUsed -= o.size; state.overlays.splice(i,1); log('Overlay removed', o.name); updateUI(); };
+        row.appendChild(rm);
+        list.appendChild(row);
+      });
+    }
+
+    // Initialize sheet
+    document.getElementById('initSheet').onclick = ()=>{
+      state.sheet = {id: 'sobeter-'+Date.now(), formatVersion:1, created:Date.now()};
+      state.capacityUsed = 64; // baseline used
+      log('Sobeter sheet initialized', state.sheet.id);
+      document.getElementById('sheetState').textContent = 'Initialized — ' + state.sheet.id;
+      updateUI();
+    };
+
+    document.getElementById('formatSheet').onclick = ()=>{
+      if(!state.sheet){ log('No sheet. Initialize first.'); return; }
+      state.capacityMax *= 1.25; state.durability += 2; log('Sheet formatted — condensed magnetic domains. Capacity +25%'); updateUI();
+    };
+
+    document.getElementById('addOverlay').onclick = ()=>{
+      const name = document.getElementById('overlayName').value || 'overlay-'+(state.overlays.length+1);
+      if(state.overlays.length >= 9){ log('Max overlays (9) reached'); return; }
+      const size = Math.floor(Math.random()*80)+20;
+      state.overlays.push({name,size,created:Date.now()}); state.capacityUsed += size; log('Overlay added', name, size+'u');
+      updateUI();
+    };
+
+    // Brain command simulator
+    function brainCommand(cmd){
+      switch(cmd){
+        case 'load': log('Brain command: load (simulated)'); state.capacityUsed += 32; break;
+        case 'embed': log('Brain command: embed — converting data to neural-impulse-like packets'); state.capacityUsed += 48; break;
+        case 'read': log('Brain command: read — overlay stream opened'); break;
+        case 'retrieve': log('Brain command: retrieve — partial recall'); state.capacityUsed += 8; break;
+        case 'unload': log('Brain command: unload — releasing overlay memory'); state.capacityUsed = Math.max(0,state.capacityUsed-40); break;
+      }
+      // simulate wear
+      state.durability = Math.max(20, state.durability - Math.random()*1.5);
+      updateUI();
+    }
+
+    // Simple codec implementation (SobCoder) — reversible
+    function sobEncode(text){
+      // step1: utf8 -> base64
+      const b64 = btoa(unescape(encodeURIComponent(text)));
+      // step2: XOR mask with time-based pseudo key
+      const key = (''+Date.now()).slice(-6);
+      let masked = '';
+      for(let i=0;i<b64.length;i++) masked += String.fromCharCode(b64.charCodeAt(i) ^ key.charCodeAt(i%key.length));
+      // step3: small run-length micro compress
+      let comp = '';
+      for(let i=0;i<masked.length;i++){
+        const ch = masked[i]; let count=1; while(masked[i+1]===ch && count<9){count++;i++;}
+        comp += (count>1?(''+count)+ch:ch);
+      }
+      // final wrapper with key marker
+      return key + '.' + btoa(comp);
+    }
+
+    function sobDecode(token){
+      try{
+        // token format key.base64(comp)
+        const [key,rest] = token.split('.'); if(!rest) return '[invalid]';
+        const comp = atob(rest);
+        // expand run-length
+        let masked = '';
+        for(let i=0;i<comp.length;i++){
+          const c = comp[i]; if(/\d/.test(c)){
+            // number prefix
+            let j=i; let num=''; while(/\d/.test(comp[j])){ num+=comp[j]; j++; }
+            const ch = comp[j]; masked += ch.repeat(Number(num)); i = j;
+          } else masked += c;
+        }
+        // unmask
+        let b64 = '';
+        for(let i=0;i<masked.length;i++) b64 += String.fromCharCode(masked.charCodeAt(i) ^ key.charCodeAt(i%key.length));
+        const text = decodeURIComponent(escape(atob(b64)));
+        return text;
+      }catch(e){return '[decode error]';}
+    }
+
+    document.getElementById('encodeBtn').onclick = ()=>{
+      const t = document.getElementById('codecInput').value; if(!t){log('Codec: nothing to encode');return;}
+      const tok = sobEncode(t); document.getElementById('codecOutput').value = tok; log('Encoded text — token len', tok.length);
+    };
+    document.getElementById('decodeBtn').onclick = ()=>{
+      const tok = document.getElementById('codecOutput').value; if(!tok){log('Codec: nothing to decode');return;}
+      const decoded = sobDecode(tok); document.getElementById('codecInput').value = decoded; log('Decoded token');
+    };
+
+    // Persistence
+    document.getElementById('saveLocal').onclick = ()=>{
+      localStorage.setItem('sobeter_state', JSON.stringify(state)); log('Saved state to localStorage');
+    };
+    document.getElementById('loadLocal').onclick = ()=>{
+      const s = JSON.parse(localStorage.getItem('sobeter_state')||'null'); if(!s){log('No saved state');return;} Object.assign(state,s); log('Loaded state from localStorage'); updateUI();
+    };
+    document.getElementById('exportJson').onclick = ()=>{
+      const data = JSON.stringify(state,null,2); const blob = new Blob([data],{type:'application/json'}); const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='sobeter_state.json'; a.click(); URL.revokeObjectURL(url); log('Exported state');
+    };
+
+    // samples loader
+    document.getElementById('sampleBooks').onchange = (e)=>{
+      const val = e.target.value; if(!val) return; document.getElementById('overlayName').value = 'Book-'+val; log('Sample selected', val);
+    };
+
+    // quick actions
+    document.getElementById('autoExpand').onclick = ()=>{ state.capacityMax = Math.floor(state.capacityMax*1.5); log('Auto expanded capacity by 50%'); updateUI(); };
+    document.getElementById('stressTest').onclick = ()=>{
+      log('Starting durability stress test (simulated)');
+      for(let i=0;i<50;i++){ state.durability -= Math.random()*1.2; state.capacityUsed += Math.floor(Math.random()*6); }
+      state.durability = Math.max(10, state.durability); updateUI(); log('Stress test complete');
+    };
+    document.getElementById('clearLog').onclick = ()=>{ logEl.innerHTML = ''; log('Cleared log'); };
+
+    // waveform draw
+    const c = document.getElementById('waveCanv'); const ctx = c.getContext('2d');
+    function drawWave(){
+      ctx.clearRect(0,0,c.width,c.height);
+      const w=c.width, h=c.height; ctx.beginPath();
+      const t = Date.now()/400;
+      for(let x=0;x<w;x++){
+        const y = h/2 + Math.sin((x/20)+t)*20*(1+Math.sin(t/3))*((state.capacityUsed/state.capacityMax)+0.2);
+        if(x===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.strokeStyle='rgba(120,200,255,0.9)'; ctx.lineWidth=1.6; ctx.stroke();
+      requestAnimationFrame(drawWave);
+    }
+    drawWave();
+
+    // small initializer
+    updateUI();
+  </script></body>
+  </html>
